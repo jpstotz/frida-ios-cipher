@@ -138,6 +138,7 @@ const CCAlgorithm: { [key: number]: string } = {
 
 const CCOptions: { [key: number]: string } = {
     //options for block ciphers
+    0: "kCCOptionCBCMode", // implicit default mode
     1: "kCCOptionPKCS7Padding",
     2: "kCCOptionECBMode"
     //stream ciphers currently have no options
@@ -427,7 +428,7 @@ function commonCryptoInterceptor() {
                 model.log = model.log.concat(COLORS.green, "[*] ENTER CCCryptorCreate", COLORS.resetColor, "\n");
                 model.log = model.log.concat(COLORS.yellow, "[+] CCOperation: ", model.CCOperation = CCOperation[this.params[0].toInt32()], COLORS.resetColor, "\n");
                 model.log = model.log.concat(COLORS.yellow, "[+] CCAlgorithm: " + CCAlgorithm[this.params[1].toInt32()], COLORS.resetColor, "\n");
-                // model.log=model.log.concat(COLORS.yellow,"[+] CCOptions: " + CCOptions[this.options.toInt32()],COLORS.resetColor,"\n");
+                model.log = model.log.concat(COLORS.yellow, "[+] CCOptions: " + CCOptions[this.params[2].toInt32()], COLORS.resetColor, "\n");
                 model.log = model.log.concat(COLORS.cyan, "[+] Key len: ", model.CCKeySize = CCKeySize[this.params[4].toInt32()], COLORS.resetColor, "\n");
                 model.log = model.log.concat(COLORS.cyan, "[+] Key: \n", model.Key = print_arg(this.params[3], pointerToInt(this.params[4])), COLORS.resetColor, "\n");
                 if (pointerToInt(this.params[5]) != 0) {
@@ -626,7 +627,8 @@ function commonCryptoInterceptor() {
                     console.warn("CCCryptorFinal model is null");
                     return;
                 }
-                if (!model.enable) return;
+                if (!model.enable)
+                    return;
 
                 if (model.totalOutLen < CIPHER_CONFIG.crypto.maxDataLength) {
                     let outRemainingSpace = CIPHER_CONFIG.crypto.maxDataLength - model.totalOutLen;
@@ -1526,18 +1528,3 @@ function commonKeychainInterceptor() {
         commonKeychainInterceptor();
     }
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
