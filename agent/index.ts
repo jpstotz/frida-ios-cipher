@@ -642,22 +642,26 @@ function commonCryptoInterceptor() {
                         model.totalOutLen += copyLength;
                     }
                 }
-                let totalData = Memory.alloc(model.totalLen);
-                var offset = 0;
-                model.dataMap.forEach(function (value) {
-                    Memory.copy(totalData.add(offset), value.data, value.len)
-                    offset += value.len;
-                });
-                let totalOutData = Memory.alloc(model.totalOutLen);
-                var offsetOut = 0;
-                model.dataOutMap.forEach(function (value) {
-                    Memory.copy(totalOutData.add(offsetOut), value.data, value.len)
-                    offsetOut += value.len;
-                });
                 model.log = model.log.concat("[+] Data len: " + model.totalLen + "/" + model.originalLen + "\n");
-                model.log = model.log.concat("[+] Data : \n", print_arg(totalData, model.totalLen), "\n");
-                model.log = model.log.concat(COLORS.magenta, "[+] Data out len: " + model.totalOutLen + "/" + model.originalOutLen + "\n");
-                model.log = model.log.concat("[+] Data out: \n", print_arg(totalOutData, model.totalOutLen), "\n", COLORS.resetColor);
+                if (model.totalLen > 0) {
+                    let totalData = Memory.alloc(model.totalLen);
+                    var offset = 0;
+                    model.dataMap.forEach(function (value) {
+                        Memory.copy(totalData.add(offset), value.data, value.len)
+                        offset += value.len;
+                    });
+                    model.log = model.log.concat("[+] Data : \n", print_arg(totalData, model.totalLen), "\n");
+                }
+                if (model.totalOutLen > 0) {
+                    let totalOutData = Memory.alloc(model.totalOutLen);
+                    var offsetOut = 0;
+                    model.dataOutMap.forEach(function (value) {
+                        Memory.copy(totalOutData.add(offsetOut), value.data, value.len)
+                        offsetOut += value.len;
+                    });
+                    model.log = model.log.concat(COLORS.magenta, "[+] Data out len: " + model.totalOutLen + "/" + model.originalOutLen + "\n");
+                    model.log = model.log.concat("[+] Data out: \n", print_arg(totalOutData, model.totalOutLen), "\n", COLORS.resetColor);
+                }
                 if (CIPHER_CONFIG.crypto.printStack) {
                     model.log = model.log.concat(COLORS.blue, "[+] stack:\n", Thread.backtrace(this.context, Backtracer.ACCURATE).map(DebugSymbol.fromAddress).join("\n"), COLORS.resetColor, "\n");
                 }
