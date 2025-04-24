@@ -60,7 +60,7 @@ const CIPHER_CONFIG = {
         "filter": []
     },
     "hmac": {
-        "enable": false,//hmac enable
+        "enable": true,//hmac enable
         "maxInputDataLength": 240,
         "printStack": false,
         "sha1": true,
@@ -501,7 +501,7 @@ function commonCryptoInterceptor() {
             },
             onLeave: function (retval) {
                 // don't ask me why but the cryptorRef is in args[10] and not in args[11] - tested with Frida 16.7.13 on iOS 16.3.1
-                let cRef = readCRefPointer(this.params[10]); 
+                let cRef = readCRefPointer(this.params[10]);
                 console.log("CCCryptorCreateWithMode CCCryptorRef:" + cRef);
                 let model: CCCryptorModel = {
                     enable: checkCryptoAlgorithmEnable(this.params[2]),
@@ -902,6 +902,7 @@ function commonHMACInterceptor() {
         }
     }
     let name = "CCHmac";
+    console.log("Hooking " + name + " Init/Update/Final");
     //void CCHmac(CCHmacAlgorithm algorithm, const void *key, size_t keyLength,const void *data, size_t dataLength, void *macOut);
     let hmac = Module.findExportByName("libSystem.B.dylib", name);
     if (hmac == null) {
@@ -949,13 +950,17 @@ function commonHMACInterceptor() {
         Interceptor.attach(init,
             {
                 onEnter: function (args) {
-                    let model = { ctx: args[0], dataMap: [], totalLen: 0, originalLen: 0, log: "", mdLen: CCHmacAlgorithmLength[args[1].toInt32()], enable: checkHMACAlgorithmEnable(args[1].toInt32()) };
+                    let algorithm = args[1].toInt32();
+                    let model = { ctx: args[0], dataMap: [], totalLen: 0, originalLen: 0, log: "", mdLen: CCHmacAlgorithmLength[algorithm], enable: checkHMACAlgorithmEnable(algorithm) };
                     ctxCache[pointerToInt(args[0])] = model;
-                    if (!model.enable) return;
+                    if (!model.enable)
+                        return;
+                    let algorithmName = CCHmacAlgorithm[args[1].toInt32()];
+                    console.log(name + "Init - ctx: " + args[1] + " algrithm: " + algorithmName);
                     model.log = model.log.concat(COLORS.green, "[*] ENTER " + name + "Init\n", COLORS.resetColor);
-                    model.log = model.log.concat(COLORS.yellow, "[+] Algorithm: " + CCHmacAlgorithm[args[1].toInt32()] + "\n", COLORS.resetColor);
-                    model.log = model.log.concat(COLORS.cyan, "[+] Key len: " + args[3].toInt32() + COLORS.resetColor + "\n");
-                    model.log = model.log.concat(COLORS.cyan, "[+] Key: \n" + print_arg(args[2], pointerToInt(args[3])) + "\n", COLORS.resetColor);
+                    model.log = model.log.concat(COLORS.yellow, "[+] Algorithm: " + algorithmName + "\n", COLORS.resetColor);
+                    model.log = model.log.concat(COLORS.cyan, "[+] Key len  : " + args[3].toInt32() + COLORS.resetColor + "\n");
+                    model.log = model.log.concat(COLORS.cyan, "[+] Key      : " + print_arg(args[2], pointerToInt(args[3])) + "\n", COLORS.resetColor);
                 }
             });
 
